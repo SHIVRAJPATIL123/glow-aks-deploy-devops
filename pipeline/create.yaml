@@ -18,20 +18,35 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-    - checkout: self # Ensure repository is checked out
-    
+    - checkout: self # Essential for deployment jobs, good practice elsewhere
+
+    # Step 1: Install Terraform
     - task: TerraformInstaller@0
       inputs:
         terraformVersion: '1.5.7'
+      displayName: 'Install Terraform 1.5.7'
     
+    # --- DIAGNOSTIC STEPS START HERE ---
+
+    # Step 2: Verify the installation directory contents
     - bash: |
-        echo "Verifying Terraform installation at /opt/hostedtoolcache/terraform/1.5.7/x64/"
-        ls -l /opt/hostedtoolcache/terraform/1.5.7/x64/
-        # Also try to run terraform directly to confirm it's executable
+        echo "Listing contents of the Terraform install directory:"
+        ls -la /opt/hostedtoolcache/terraform/1.5.7/x64/
+        echo "Listing contents of the parent directory to check for other versions:"
+        ls -la /opt/hostedtoolcache/terraform/
+      displayName: 'Verify Terraform Installation Path and Contents'
+      # continueOnError: true # You can keep this for initial debugging, but remove once resolved.
+
+    # Step 3: Try to execute Terraform directly
+    - bash: |
+        echo "Attempting to execute Terraform directly to check its existence and permissions:"
         /opt/hostedtoolcache/terraform/1.5.7/x64/terraform --version
-      displayName: 'Verify Terraform Installation and Executability'
-      continueOnError: true # Allow pipeline to continue even if this fails, for more debugging info
+      displayName: 'Test Terraform Executability'
+      # continueOnError: true # You can keep this for initial debugging, but remove once resolved.
     
+    # --- DIAGNOSTIC STEPS END HERE ---
+
+    # Step 4: Your original Terraform init task
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
@@ -42,11 +57,14 @@ stages:
         backendAzureRmStorageAccountName: 'glowsatf'
         backendAzureRmContainerName: 'sacont'
         backendAzureRmKey: 'dev.terraform.tfstate'
+      displayName: 'Terraform Init (Dev)'
     
+    # Step 5: Your original Terraform validate task
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
         command: 'validate'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+      displayName: 'Terraform Validate (Dev)'
 
-# ... (rest of your stages, apply the same checkout and verification if needed)
+# ... (Apply similar diagnostic steps to Dev_Deploy and Test_Deploy stages as well)
