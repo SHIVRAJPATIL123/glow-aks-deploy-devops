@@ -6,8 +6,7 @@ trigger:
     - feature/*
   paths:
     include:
-    - dev/* # CORRECTED: Trigger on changes in 'dev' directory
-    - modules/* # CORRECTED: Trigger on changes in 'modules' directory
+    - terraform/*
 
 variables:
   - group: terraform-secrets
@@ -17,9 +16,9 @@ stages:
   jobs:
   - job: terraform_validate
     pool:
-      vmImage: 'windows-latest' # Can also use 'ubuntu-latest' for consistency
-
+      vmImage: 'windows-latest'
     steps:
+
     - task: TerraformInstaller@1
       inputs:
         terraformVersion: '1.6.6'
@@ -29,16 +28,13 @@ stages:
         script: 'terraform -version'
 
     - powershell: |
-        # List contents of the current working directory to help debug paths
-        Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse
+        Get-ChildItem "$(System.DefaultWorkingDirectory)\dev"
 
     - task: TerraformTask@5
-      displayName: 'Terraform Init (Dev)'
       inputs:
         provider: 'azurerm'
         command: 'init'
-        # CORRECTED: Point to the directory containing your main.tf for dev environment
-        workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\dev'
         backendServiceArm: 'TerraformServiceConnection'
         backendAzureRmResourceGroupName: 'AZ-104'
         backendAzureRmStorageAccountName: 'glowsatf'
@@ -46,12 +42,10 @@ stages:
         backendAzureRmKey: 'dev.tfstate'
     
     - task: TerraformTask@5
-      displayName: 'Terraform Validate (Dev)'
       inputs:
         provider: 'azurerm'
         command: 'validate'
-        # CORRECTED: Point to the directory containing your main.tf for dev environment
-        workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
 
 - stage: Dev_Deploy
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
@@ -69,24 +63,10 @@ stages:
               terraformVersion: '1.5.7'
           
           - task: TerraformTask@5
-            displayName: 'Terraform Init (Dev Deploy)' # ADDED: Explicit init before apply
-            inputs:
-              provider: 'azurerm'
-              # CORRECTED: workingDirectory for init
-              workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-              backendServiceArm: 'TerraformServiceConnection'
-              backendAzureRmResourceGroupName: 'AZ-104'
-              backendAzureRmStorageAccountName: 'glowsatf'
-              backendAzureRmContainerName: 'sacont'
-              backendAzureRmKey: 'dev.tfstate'
-
-          - task: TerraformTask@5
-            displayName: 'Terraform Apply (Dev)'
             inputs:
               provider: 'azurerm'
               command: 'apply'
-              # CORRECTED: Point to the directory containing your main.tf for dev environment
-              workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
               environmentServiceNameAzureRM: 'TerraformServiceConnection'
 
 - stage: Test_Deploy
@@ -103,25 +83,10 @@ stages:
           - task: TerraformInstaller@0
             inputs:
               terraformVersion: '1.5.7'
-
+          
           - task: TerraformTask@5
-            displayName: 'Terraform Init (Test Deploy)' # ADDED: Explicit init for test stage
-            inputs:
-              provider: 'azurerm'
-              command: 'init'
-              # CORRECTED: Assuming you have a test/main.tf structure similar to dev
-              workingDirectory: '$(System.DefaultWorkingDirectory)/test'
-              backendServiceArm: 'TerraformServiceConnection'
-              backendAzureRmResourceGroupName: 'AZ-104'
-              backendAzureRmStorageAccountName: 'glowsatf'
-              backendAzureRmContainerName: 'sacont'
-              backendAzureRmKey: 'test.tfstate' # IMPORTANT: Use a different key for test state
-
-          - task: TerraformTask@5
-            displayName: 'Terraform Apply (Test)'
             inputs:
               provider: 'azurerm'
               command: 'apply'
-              # CORRECTED: Assuming you have a test/main.tf structure similar to dev
-              workingDirectory: '$(System.DefaultDirectory)/test'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/test'
               environmentServiceNameAzureRM: 'TerraformServiceConnection'
