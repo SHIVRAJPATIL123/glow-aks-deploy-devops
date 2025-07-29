@@ -16,7 +16,7 @@ stages:
   jobs:
   - job: terraform_validate
     pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: 'windows-latest'
     steps:
     - task: TerraformInstaller@0
       inputs:
