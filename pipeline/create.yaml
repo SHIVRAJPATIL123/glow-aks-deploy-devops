@@ -18,64 +18,67 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-    - checkout: self
-
-    - bash: |
-        TF_VERSION="1.5.7"
-        TF_INSTALL_DIR="/usr/local/bin" # A common location for executables on Linux
-
-        echo "Downloading Terraform v${TF_VERSION}..."
-        wget "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip" -O terraform.zip
-
-        echo "Unzipping Terraform..."
-        unzip terraform.zip -d .
-
-        echo "Moving Terraform to ${TF_INSTALL_DIR}..."
-        sudo mv terraform ${TF_INSTALL_DIR}/
-        sudo chmod +x ${TF_INSTALL_DIR}/terraform
-
-        echo "Verifying Terraform installation and version (within manual install script):"
-        terraform --version # This should succeed if the above steps worked
-      displayName: 'Manual Install Terraform'
-      # continueOnError: true # Keep this for now, but aim to remove
-
-    # --- NEW DIAGNOSTIC STEPS AFTER MANUAL INSTALL ---
-
-    - bash: |
-        echo "Post-install verification - Listing /usr/local/bin/terraform:"
-        ls -la /usr/local/bin/terraform
-
-        echo "Post-install verification - Checking environment PATH:"
-        echo $PATH
-
-        echo "Post-install verification - Attempting to execute /usr/local/bin/terraform directly:"
-        /usr/local/bin/terraform --version
-      displayName: 'Verify Terraform Executability After Manual Install'
-      # continueOnError: true # Keep this for now, but aim to remove
-
-    # --- Your original Terraform init task ---
+    - task: TerraformInstaller@0
+      inputs:
+        terraformVersion: '1.5.7'
+    
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
         command: 'init'
-        # IMPORTANT: When you manually install to /usr/local/bin/,
-        # TerraformTaskV4@4 should find it in the PATH.
-        # However, if it still fails, you *might* need to explicitly set terraformPath.
-        # For now, let's see if the above diagnostics reveal the issue.
-        # terraformPath: '/usr/local/bin/terraform' # <--- Only add this if other diagnostics fail
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
         backendServiceArm: 'TerraformServiceConnection'
         backendAzureRmResourceGroupName: 'AZ-104'
         backendAzureRmStorageAccountName: 'glowsatf'
         backendAzureRmContainerName: 'sacont'
         backendAzureRmKey: 'dev.terraform.tfstate'
-      displayName: 'Terraform Init (Dev)'
-
+    
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
         command: 'validate'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
-      displayName: 'Terraform Validate (Dev)'
 
-# ... (Apply similar diagnostic steps to Dev_Deploy and Test_Deploy stages as well)
+- stage: Dev_Deploy
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: terraform_apply_dev
+    environment: dev
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: '1.5.7'
+          
+          - task: TerraformTaskV4@4
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+              environmentServiceNameAzureRM: 'TerraformServiceConnection'
+
+- stage: Test_Deploy
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: terraform_apply_test
+    environment: test
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: '1.5.7'
+          
+          - task: TerraformTaskV4@4
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/test'
+              environmentServiceNameAzureRM: 'TerraformServiceConnection'
