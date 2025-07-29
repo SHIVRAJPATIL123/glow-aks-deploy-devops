@@ -34,7 +34,7 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'init'
-        workingDirectory: '$(System.DefaultWorkingDirectory)\tf\dev'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\dev'
         backendServiceArm: 'TerraformServiceConnection'
         backendAzureRmResourceGroupName: 'AZ-104'
         backendAzureRmStorageAccountName: 'glowsatf'
