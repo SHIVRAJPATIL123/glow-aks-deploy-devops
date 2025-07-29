@@ -22,6 +22,10 @@ stages:
       inputs:
         terraformVersion: '1.5.7'
     
+    - task: CmdLine@2
+      inputs:
+        script: 'terraform'
+
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
