@@ -28,19 +28,18 @@ stages:
         script: 'terraform -version'
 
     - powershell: |
-        Get-ChildItem "$(System.DefaultWorkingDirectory)"
+        Get-ChildItem "$(System.DefaultWorkingDirectory)\dev"
 
-    - task: CmdLine@2
+    - task: TerraformTask@5
       inputs:
-        script: |
-          terraform -version
-          terraform init -backend-config="storage_account_name=glowsatf" `
-                        -backend-config="container_name=sacont" `
-                        -backend-config="key=dev.terraform.tfstate" `
-                        -backend-config="resource_group_name=AZ-104" `
-                        -backend-config="subscription_id=f510d486-a17f-44f2-a1c4-63a7186e923c" `
-                        -backend-config="use_azuread_auth=true"
+        provider: 'azurerm'
+        command: 'init'
         workingDirectory: '$(System.DefaultWorkingDirectory)\dev'
+        backendServiceArm: 'TerraformServiceConnection'
+        backendAzureRmResourceGroupName: 'AZ-104'
+        backendAzureRmStorageAccountName: 'glowsatf'
+        backendAzureRmContainerName: 'sacont'
+        backendAzureRmKey: 'dev.terraform.tfstate'
     
     - task: TerraformTask@5
       inputs:
