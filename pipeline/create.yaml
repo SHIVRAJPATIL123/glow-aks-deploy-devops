@@ -39,7 +39,7 @@ stages:
         backendAzureRmResourceGroupName: 'AZ-104'
         backendAzureRmStorageAccountName: 'glowsatf'
         backendAzureRmContainerName: 'sacont'
-        backendAzureRmKey: 'dev.terraform.tfstate'
+        backendAzureRmKey: 'dev.tfstate'
     
     - task: TerraformTask@5
       inputs:
