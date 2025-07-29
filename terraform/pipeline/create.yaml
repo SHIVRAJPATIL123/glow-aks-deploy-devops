@@ -28,13 +28,13 @@ stages:
         script: 'terraform -version'
 
     - powershell: |
-        Get-ChildItem "$(System.DefaultWorkingDirectory)\dev"
+        Get-ChildItem "$(System.DefaultWorkingDirectory)terraform\dev"
 
     - task: TerraformTask@5
       inputs:
         provider: 'azurerm'
         command: 'init'
-        workingDirectory: '$(System.DefaultWorkingDirectory)\dev'
+        workingDirectory: '$(System.DefaultWorkingDirectory)terraform\dev'
         backendServiceArm: 'TerraformServiceConnection'
         backendAzureRmResourceGroupName: 'AZ-104'
         backendAzureRmStorageAccountName: 'glowsatf'
