@@ -13,7 +13,7 @@ resource "tls_private_key" "ssh" {
   rsa_bits  = 4096
 }
 resource "azurerm_kubernetes_cluster" "aks-cluster" {
-  name                  = var.aks_name
+  name                  = var.cluster_name
   location              = var.location
   resource_group_name   = var.resource_group_name
   dns_prefix            = "${var.resource_group_name}-cluster"           
@@ -21,7 +21,7 @@ resource "azurerm_kubernetes_cluster" "aks-cluster" {
   node_resource_group = "${var.resource_group_name}-nrg"
   
   default_node_pool {
-    name       = "defaultpool"
+    name       = var.node_pool_name
     vm_size    = "Standard_DS2_v2"
     zones   = [1, 2, 3]
     auto_scaling_enabled = true
@@ -29,16 +29,7 @@ resource "azurerm_kubernetes_cluster" "aks-cluster" {
     min_count            = 1
     os_disk_size_gb      = 30
     type                 = "VirtualMachineScaleSets"
-    node_labels = {
-      "nodepool-type"    = "system"
-      "environment"      = "prod"
-      "nodepoolos"       = "linux"
-     } 
-   tags = {
-      "nodepool-type"    = "system"
-      "environment"      = "prod"
-      "nodepoolos"       = "linux"
-   } 
+
   }
 
   service_principal  {
