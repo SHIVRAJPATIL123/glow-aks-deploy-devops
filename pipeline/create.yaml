@@ -18,35 +18,30 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-    - checkout: self # Essential for deployment jobs, good practice elsewhere
+    - checkout: self
 
-    # Step 1: Install Terraform
-    - task: TerraformInstaller@0
-      inputs:
-        terraformVersion: '1.5.7'
-      displayName: 'Install Terraform 1.5.7'
-    
-    # --- DIAGNOSTIC STEPS START HERE ---
-
-    # Step 2: Verify the installation directory contents
+    # --- REPLACE TerraformInstaller@0 with manual download/install ---
     - bash: |
-        echo "Listing contents of the Terraform install directory:"
-        ls -la /opt/hostedtoolcache/terraform/1.5.7/x64/
-        echo "Listing contents of the parent directory to check for other versions:"
-        ls -la /opt/hostedtoolcache/terraform/
-      displayName: 'Verify Terraform Installation Path and Contents'
-      # continueOnError: true # You can keep this for initial debugging, but remove once resolved.
+        TF_VERSION="1.5.7"
+        TF_INSTALL_DIR="/usr/local/bin" # A common location for executables on Linux
 
-    # Step 3: Try to execute Terraform directly
-    - bash: |
-        echo "Attempting to execute Terraform directly to check its existence and permissions:"
-        /opt/hostedtoolcache/terraform/1.5.7/x64/terraform --version
-      displayName: 'Test Terraform Executability'
-      # continueOnError: true # You can keep this for initial debugging, but remove once resolved.
-    
-    # --- DIAGNOSTIC STEPS END HERE ---
+        echo "Downloading Terraform v${TF_VERSION}..."
+        wget "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip" -O terraform.zip
 
-    # Step 4: Your original Terraform init task
+        echo "Unzipping Terraform..."
+        unzip terraform.zip -d .
+
+        echo "Moving Terraform to ${TF_INSTALL_DIR}..."
+        sudo mv terraform ${TF_INSTALL_DIR}/
+        sudo chmod +x ${TF_INSTALL_DIR}/terraform
+
+        echo "Verifying Terraform installation and version:"
+        terraform --version
+      displayName: 'Manual Install Terraform'
+      # Set continueOnError to true only for debugging. Remove once successful.
+      # continueOnError: true
+
+    # --- Now use the installed Terraform ---
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
@@ -57,14 +52,13 @@ stages:
         backendAzureRmStorageAccountName: 'glowsatf'
         backendAzureRmContainerName: 'sacont'
         backendAzureRmKey: 'dev.terraform.tfstate'
-      displayName: 'Terraform Init (Dev)'
-    
-    # Step 5: Your original Terraform validate task
+      displayName: 'Terraform Init (Dev)' # Added display name for clarity
+
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
         command: 'validate'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
-      displayName: 'Terraform Validate (Dev)'
+      displayName: 'Terraform Validate (Dev)' # Added display name for clarity
 
-# ... (Apply similar diagnostic steps to Dev_Deploy and Test_Deploy stages as well)
+# ... (Apply similar manual installation to Dev_Deploy and Test_Deploy stages)
