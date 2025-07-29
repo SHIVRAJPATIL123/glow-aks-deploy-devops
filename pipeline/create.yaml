@@ -40,7 +40,7 @@ stages:
                         -backend-config="resource_group_name=AZ-104" `
                         -backend-config="subscription_id=f510d486-a17f-44f2-a1c4-63a7186e923c" `
                         -backend-config="use_azuread_auth=true"
-        workingDirectory: '$(System.DefaultWorkingDirectory)\terraform\dev'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\dev'
     
     - task: TerraformTask@5
       inputs:
