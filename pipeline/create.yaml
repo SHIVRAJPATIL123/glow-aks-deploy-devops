@@ -17,10 +17,6 @@ stages:
       pool:
         vmImage: 'ubuntu-latest'
       steps:
-        - task: TerraformInstaller@0
-          inputs:
-            terraformVersion: '1.9.0'
-
         - task: TerraformTaskV4@4
           inputs:
             provider: 'azurerm'
@@ -49,10 +45,6 @@ stages:
         runOnce:
           deploy:
             steps:
-              - task: TerraformInstaller@0
-                inputs:
-                  terraformVersion: '1.9.0'
-
               - task: TerraformTaskV4@4
                 inputs:
                   provider: 'azurerm'
@@ -71,10 +63,6 @@ stages:
         runOnce:
           deploy:
             steps:
-              - task: TerraformInstaller@0
-                inputs:
-                  terraformVersion: '1.9.0'
-
               - task: TerraformTaskV4@4
                 inputs:
                   provider: 'azurerm'
