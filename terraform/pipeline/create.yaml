@@ -53,7 +53,7 @@ stages:
   - deployment: terraform_apply_dev
     environment: dev
     pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: 'windows-latest'
     strategy:
       runOnce:
         deploy:
@@ -75,7 +75,7 @@ stages:
   - deployment: terraform_apply_staging
     environment: staging
     pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: 'windows-latest'
     strategy:
       runOnce:
         deploy:
