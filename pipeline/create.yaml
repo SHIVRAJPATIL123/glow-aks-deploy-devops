@@ -18,10 +18,19 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-    - checkout: self # Add this to ensure the repository is checked out
+    - checkout: self # Ensure repository is checked out
+    
     - task: TerraformInstaller@0
       inputs:
         terraformVersion: '1.5.7'
+    
+    - bash: |
+        echo "Verifying Terraform installation at /opt/hostedtoolcache/terraform/1.5.7/x64/"
+        ls -l /opt/hostedtoolcache/terraform/1.5.7/x64/
+        # Also try to run terraform directly to confirm it's executable
+        /opt/hostedtoolcache/terraform/1.5.7/x64/terraform --version
+      displayName: 'Verify Terraform Installation and Executability'
+      continueOnError: true # Allow pipeline to continue even if this fails, for more debugging info
     
     - task: TerraformTaskV4@4
       inputs:
@@ -40,48 +49,4 @@ stages:
         command: 'validate'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
 
-- stage: Dev_Deploy
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  jobs:
-  - deployment: terraform_apply_dev
-    environment: dev
-    pool:
-      vmImage: 'ubuntu-latest'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self # Add this to ensure the repository is checked out in deployment job
-          - task: TerraformInstaller@0
-            inputs:
-              terraformVersion: '1.5.7'
-          
-          - task: TerraformTaskV4@4
-            inputs:
-              provider: 'azurerm'
-              command: 'apply'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
-              environmentServiceNameAzureRM: 'TerraformServiceConnection'
-
-- stage: Test_Deploy
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  jobs:
-  - deployment: terraform_apply_test
-    environment: test
-    pool:
-      vmImage: 'ubuntu-latest'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self # Add this to ensure the repository is checked out in deployment job
-          - task: TerraformInstaller@0
-            inputs:
-              terraformVersion: '1.5.7'
-          
-          - task: TerraformTaskV4@4
-            inputs:
-              provider: 'azurerm'
-              command: 'apply'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/test'
-              environmentServiceNameAzureRM: 'TerraformServiceConnection'
+# ... (rest of your stages, apply the same checkout and verification if needed)
