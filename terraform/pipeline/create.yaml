@@ -28,13 +28,13 @@ stages:
         script: 'terraform -version'
 
     - powershell: |
-        Get-ChildItem "$(System.DefaultWorkingDirectory)terraform\dev"
+        Get-ChildItem "$(System.DefaultWorkingDirectory)\terraform\dev"
 
     - task: TerraformTask@5
       inputs:
         provider: 'azurerm'
         command: 'init'
-        workingDirectory: '$(System.DefaultWorkingDirectory)terraform\dev'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\terraform\dev'
         backendServiceArm: 'TerraformServiceConnection'
         backendAzureRmResourceGroupName: 'AZ-104'
         backendAzureRmStorageAccountName: 'glowsatf'
@@ -45,7 +45,7 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'validate'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\terraform\dev'
 
 - stage: Dev_Deploy
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
@@ -66,14 +66,14 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'apply'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+              workingDirectory: '$(System.DefaultWorkingDirectory)\terraform\dev'
               environmentServiceNameAzureRM: 'TerraformServiceConnection'
 
-- stage: Test_Deploy
+- stage: staging_Deploy
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
-  - deployment: terraform_apply_test
-    environment: test
+  - deployment: terraform_apply_staging
+    environment: staging
     pool:
       vmImage: 'ubuntu-latest'
     strategy:
@@ -88,5 +88,5 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'apply'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/test'
+              workingDirectory: '$(System.DefaultWorkingDirectory)\terraform/staging'
               environmentServiceNameAzureRM: 'TerraformServiceConnection'
