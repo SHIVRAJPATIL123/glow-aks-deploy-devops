@@ -17,6 +17,9 @@ variable "client_secret" {
   sensitive = true
 }
 
-variable "aks_name" {
+variable "cluster_name" {
+  
+}
+variable "node_pool_name" {
   
 }
