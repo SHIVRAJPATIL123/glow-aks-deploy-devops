@@ -1,112 +1,127 @@
+# azure-pipelines.yml
 trigger:
   branches:
     include:
-      - main
-      - feature/*
+    - main
+    - feature/*
   paths:
     include:
-      - terraform/*
+    - dev/* # Trigger if changes in dev directory
+    - modules/* # Trigger if changes in modules directory
 
 variables:
   - group: terraform-secrets
 
 stages:
-
-# ------------------- VALIDATE STAGE -------------------
-
 - stage: Validate
   jobs:
-    - job: terraform_validate
-      displayName: 'Terraform Validate'
-      pool:
-        vmImage: 'ubuntu-latest'
-      steps:
+  - job: terraform_validate
+    pool:
+      vmImage: 'windows-latest' # Can also use 'ubuntu-latest' for consistency
 
-        - checkout: self
+    steps:
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: '1.6.6'
 
-        - task: TerraformInstaller@1
-          inputs:
-            terraformVersion: '1.6.6'
+    - task: CmdLine@2
+      inputs:
+        script: 'terraform -version'
 
-        - script: terraform -version
-          displayName: 'Terraform Version'
+    - powershell: |
+        # List contents of the current working directory to help debug paths
+        Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse
 
-        - script: ls -al $(System.DefaultWorkingDirectory)/terraform/dev
-          displayName: 'List contents of terraform/dev'
-
-        - task: TerraformTaskV4@4
-          displayName: 'Terraform Init'
-          inputs:
-            provider: 'azurerm'
-            command: 'init'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
-            backendServiceArm: 'TerraformServiceConnection'
-            backendAzureRmResourceGroupName: 'AZ-104'
-            backendAzureRmStorageAccountName: 'glowsatf'
-            backendAzureRmContainerName: 'sacont'
-            backendAzureRmKey: 'dev.tfstate'
-
-        - task: TerraformTaskV4@4
-          displayName: 'Terraform Validate'
-          inputs:
-            provider: 'azurerm'
-            command: 'validate'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
-
-# ------------------- DEV DEPLOY -------------------
+    - task: TerraformTask@5
+      displayName: 'Terraform Init (Dev)'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        # Point to the directory containing your main.tf for dev environment
+        workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+        backendServiceArm: 'TerraformServiceConnection'
+        backendAzureRmResourceGroupName: 'AZ-104'
+        backendAzureRmStorageAccountName: 'glowsatf'
+        backendAzureRmContainerName: 'sacont'
+        backendAzureRmKey: 'dev.tfstate'
+    
+    - task: TerraformTask@5
+      displayName: 'Terraform Validate (Dev)'
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+        # Point to the directory containing your main.tf for dev environment
+        workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
 
 - stage: Dev_Deploy
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
-    - deployment: terraform_apply_dev
-      displayName: 'Terraform Apply Dev'
-      environment: dev
-      pool:
-        vmImage: 'ubuntu-latest'
-      strategy:
-        runOnce:
-          deploy:
-            steps:
+  - deployment: terraform_apply_dev
+    environment: dev
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: '1.5.7'
+          
+          - task: TerraformTask@5
+            displayName: 'Terraform Init (Dev Deploy)'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+              backendServiceArm: 'TerraformServiceConnection' # Ensure this is also present for apply stage init
+              backendAzureRmResourceGroupName: 'AZ-104'
+              backendAzureRmStorageAccountName: 'glowsatf'
+              backendAzureRmContainerName: 'sacont'
+              backendAzureRmKey: 'dev.tfstate'
 
-              - checkout: self
-
-              - task: TerraformInstaller@1
-                inputs:
-                  terraformVersion: '1.6.6'
-
-              - task: TerraformTaskV4@4
-                displayName: 'Terraform Apply Dev'
-                inputs:
-                  provider: 'azurerm'
-                  command: 'apply'
-                  workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
-                  environmentServiceNameAzureRM: 'TerraformServiceConnection'
-
-# ------------------- TEST DEPLOY -------------------
+          - task: TerraformTask@5
+            displayName: 'Terraform Apply (Dev)'
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              # Point to the directory containing your main.tf for dev environment
+              workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+              environmentServiceNameAzureRM: 'TerraformServiceConnection'
 
 - stage: Test_Deploy
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
-    - deployment: terraform_apply_test
-      displayName: 'Terraform Apply Test'
-      environment: test
-      pool:
-        vmImage: 'ubuntu-latest'
-      strategy:
-        runOnce:
-          deploy:
-            steps:
+  - deployment: terraform_apply_test
+    environment: test
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: '1.5.7'
 
-              - checkout: self
+          - task: TerraformTask@5
+            displayName: 'Terraform Init (Test Deploy)'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              # Assuming you have a test/main.tf structure similar to dev
+              workingDirectory: '$(System.DefaultWorkingDirectory)/test' # <--- IMPORTANT: Adjust if your test configuration is elsewhere
+              backendServiceArm: 'TerraformServiceConnection'
+              backendAzureRmResourceGroupName: 'AZ-104'
+              backendAzureRmStorageAccountName: 'glowsatf'
+              backendAzureRmContainerName: 'sacont'
+              backendAzureRmKey: 'test.tfstate' # <--- IMPORTANT: Use a different key for test state
 
-              - task: TerraformInstaller@1
-                inputs:
-                  terraformVersion: '1.6.6'
-
-              - task: TerraformTaskV4@4
-                displayName: 'Terraform Apply Test'
-                inputs:
-                  provider: 'azurerm'
-                  command: 'apply'
-                  workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/test'
-                  environmentServiceNameAzureRM: 'TerraformServiceConnection'
+          - task: TerraformTask@5
+            displayName: 'Terraform Apply (Test)'
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              # Assuming you have a test/main.tf structure similar to dev
+              workingDirectory: '$(System.DefaultWorkingDirectory)/test' # <--- IMPORTANT: Adjust if your test configuration is elsewhere
+              environmentServiceNameAzureRM: 'TerraformServiceConnection'
