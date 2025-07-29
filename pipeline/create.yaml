@@ -24,7 +24,7 @@ stages:
     
     - task: CmdLine@2
       inputs:
-        script: 'terraform'
+        script: 'terraform -version'
 
     - task: TerraformTaskV4@4
       inputs:
