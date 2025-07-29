@@ -26,7 +26,7 @@ stages:
       inputs:
         script: 'terraform -version'
 
-    - task: TerraformTaskV4@4
+    - task: TerraformTask@5
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -37,7 +37,7 @@ stages:
         backendAzureRmContainerName: 'sacont'
         backendAzureRmKey: 'dev.terraform.tfstate'
     
-    - task: TerraformTaskV4@4
+    - task: TerraformTask@5
       inputs:
         provider: 'azurerm'
         command: 'validate'
@@ -58,7 +58,7 @@ stages:
             inputs:
               terraformVersion: '1.5.7'
           
-          - task: TerraformTaskV4@4
+          - task: TerraformTask@5
             inputs:
               provider: 'azurerm'
               command: 'apply'
@@ -80,7 +80,7 @@ stages:
             inputs:
               terraformVersion: '1.5.7'
           
-          - task: TerraformTaskV4@4
+          - task: TerraformTask@5
             inputs:
               provider: 'azurerm'
               command: 'apply'
