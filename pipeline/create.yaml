@@ -27,6 +27,9 @@ stages:
       inputs:
         script: 'terraform -version'
 
+    - powershell: |
+        Get-ChildItem "C:\hostedtoolcache\windows\terraform"
+
     - task: TerraformTask@5
       inputs:
         provider: 'azurerm'
