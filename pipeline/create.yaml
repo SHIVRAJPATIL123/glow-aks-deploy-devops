@@ -1,55 +1,45 @@
+# azure-pipelines.yml
 trigger:
   branches:
     include:
-      - main
-      - feature/*
+    - main
+    - feature/*
   paths:
     include:
-      - terraform/*
+    - terraform/*
 
 variables:
   - group: terraform-secrets
 
 stages:
 - stage: Validate
-  displayName: 'Terraform Validate'
   jobs:
   - job: terraform_validate
-    displayName: 'Terraform Init and Validate'
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-    - task: TerraformInstaller@1
-      displayName: 'Install Terraform 1.6.6'
+    - task: TerraformInstaller@0
       inputs:
-        terraformVersion: '1.6.6'
-
-    - script: |
-        which terraform
-        terraform version
-      displayName: 'Verify Terraform installation'
-
+        terraformVersion: '1.5.7'
+    
     - task: TerraformTaskV4@4
-      displayName: 'Terraform Init'
       inputs:
         provider: 'azurerm'
         command: 'init'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
         backendServiceArm: 'TerraformServiceConnection'
-        backendAzureRmResourceGroupName: 'Az-104'
+        backendAzureRmResourceGroupName: 'AZ-104'
         backendAzureRmStorageAccountName: 'glowsatf'
         backendAzureRmContainerName: 'sacont'
         backendAzureRmKey: 'dev.terraform.tfstate'
-
+    
     - task: TerraformTaskV4@4
-      displayName: 'Terraform Validate'
       inputs:
         provider: 'azurerm'
         command: 'validate'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
 
 - stage: Dev_Deploy
-  displayName: 'Terraform Plan and Apply - Dev'
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
   - deployment: terraform_apply_dev
@@ -60,47 +50,18 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: TerraformInstaller@1
-            displayName: 'Install Terraform 1.6.6'
+          - task: TerraformInstaller@0
             inputs:
-              terraformVersion: '1.6.6'
-
-          - script: |
-              which terraform
-              terraform version
-            displayName: 'Verify Terraform installation'
-
+              terraformVersion: '1.5.7'
+          
           - task: TerraformTaskV4@4
-            displayName: 'Terraform Init'
-            inputs:
-              provider: 'azurerm'
-              command: 'init'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
-              backendServiceArm: 'TerraformServiceConnection'
-              backendAzureRmResourceGroupName: 'Az-104'
-              backendAzureRmStorageAccountName: 'glowsatf'
-              backendAzureRmContainerName: 'sacont'
-              backendAzureRmKey: 'dev.terraform.tfstate'
-
-          - task: TerraformTaskV4@4
-            displayName: 'Terraform Plan Dev'
-            inputs:
-              provider: 'azurerm'
-              command: 'plan'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
-              environmentServiceNameAzureRM: 'TerraformServiceConnection'
-
-          - task: TerraformTaskV4@4
-            displayName: 'Terraform Apply Dev'
             inputs:
               provider: 'azurerm'
               command: 'apply'
               workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
               environmentServiceNameAzureRM: 'TerraformServiceConnection'
-              commandOptions: '-auto-approve'
 
 - stage: Test_Deploy
-  displayName: 'Terraform Plan and Apply - Test'
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
   - deployment: terraform_apply_test
@@ -111,41 +72,13 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: TerraformInstaller@1
-            displayName: 'Install Terraform 1.6.6'
+          - task: TerraformInstaller@0
             inputs:
-              terraformVersion: '1.6.6'
-
-          - script: |
-              which terraform
-              terraform version
-            displayName: 'Verify Terraform installation'
-
+              terraformVersion: '1.5.7'
+          
           - task: TerraformTaskV4@4
-            displayName: 'Terraform Init'
-            inputs:
-              provider: 'azurerm'
-              command: 'init'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/test'
-              backendServiceArm: 'TerraformServiceConnection'
-              backendAzureRmResourceGroupName: 'Az-104'
-              backendAzureRmStorageAccountName: 'glowsatf'
-              backendAzureRmContainerName: 'sacont'
-              backendAzureRmKey: 'test.terraform.tfstate'
-
-          - task: TerraformTaskV4@4
-            displayName: 'Terraform Plan Test'
-            inputs:
-              provider: 'azurerm'
-              command: 'plan'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/test'
-              environmentServiceNameAzureRM: 'TerraformServiceConnection'
-
-          - task: TerraformTaskV4@4
-            displayName: 'Terraform Apply Test'
             inputs:
               provider: 'azurerm'
               command: 'apply'
               workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/test'
               environmentServiceNameAzureRM: 'TerraformServiceConnection'
-              commandOptions: '-auto-approve'
