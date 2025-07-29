@@ -1,0 +1,7 @@
+rgname = "stage-shivaksrg"
+location = "eastus"
+service_principal_name = "stage-tfserviceprinciple"
+keyvault_name = "stage-tf-kvshivraj"
+SUB_ID = "f510d486-a17f-44f2-a1c4-63a7186e923c"
+cluster_name = "stage-shivakscluster"
+node_pool_name = "stagenp"

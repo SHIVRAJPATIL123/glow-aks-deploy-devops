@@ -1,0 +1,7 @@
+rgname = "dev-shivaksrg"
+location = "eastus"
+service_principal_name = "dev-tfserviceprinciple"
+keyvault_name = "dev-tf-kvshivraj"
+SUB_ID = "f510d486-a17f-44f2-a1c4-63a7186e923c"
+cluster_name = "dev-shivakscluster"
+node_pool_name = "devnp"
