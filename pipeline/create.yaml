@@ -12,12 +12,20 @@ variables:
 
 stages:
 - stage: Validate
+  displayName: 'Terraform Validate'
   jobs:
     - job: terraform_validate
+      displayName: 'Terraform Init and Validate'
       pool:
         vmImage: 'ubuntu-latest'
       steps:
+        - task: TerraformInstaller@0
+          displayName: 'Install Terraform 1.9.0'
+          inputs:
+            terraformVersion: '1.9.0'
+
         - task: TerraformTaskV4@4
+          displayName: 'Terraform Init'
           inputs:
             provider: 'azurerm'
             command: 'init'
@@ -29,12 +37,14 @@ stages:
             backendAzureRmKey: 'dev.terraform.tfstate'
 
         - task: TerraformTaskV4@4
+          displayName: 'Terraform Validate'
           inputs:
             provider: 'azurerm'
             command: 'validate'
             workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
 
 - stage: Dev_Deploy
+  displayName: 'Terraform Apply - Dev'
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
     - deployment: terraform_apply_dev
@@ -45,14 +55,22 @@ stages:
         runOnce:
           deploy:
             steps:
+              - task: TerraformInstaller@0
+                displayName: 'Install Terraform 1.9.0'
+                inputs:
+                  terraformVersion: '1.9.0'
+
               - task: TerraformTaskV4@4
+                displayName: 'Terraform Apply Dev'
                 inputs:
                   provider: 'azurerm'
                   command: 'apply'
                   workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
                   environmentServiceNameAzureRM: 'TerraformServiceConnection'
+                  commandOptions: '-auto-approve'
 
 - stage: Test_Deploy
+  displayName: 'Terraform Apply - Test'
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
     - deployment: terraform_apply_test
@@ -63,9 +81,16 @@ stages:
         runOnce:
           deploy:
             steps:
+              - task: TerraformInstaller@0
+                displayName: 'Install Terraform 1.9.0'
+                inputs:
+                  terraformVersion: '1.9.0'
+
               - task: TerraformTaskV4@4
+                displayName: 'Terraform Apply Test'
                 inputs:
                   provider: 'azurerm'
                   command: 'apply'
                   workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/test'
                   environmentServiceNameAzureRM: 'TerraformServiceConnection'
+                  commandOptions: '-auto-approve'
