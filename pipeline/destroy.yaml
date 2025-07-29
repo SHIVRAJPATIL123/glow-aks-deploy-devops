@@ -30,7 +30,7 @@ stages:
         provider: 'azurerm'
         command: 'plan'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/${{ parameters.environment }}'
-        environmentServiceNameAzureRM: 'Azure-Service-Connection'
+        environmentServiceNameAzureRM: 'TerraformServiceConnection'
         commandOptions: '-destroy'
         publishPlanResults: 'tfdestroy'
 
@@ -55,4 +55,4 @@ stages:
               provider: 'azurerm'
               command: 'destroy'
               workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/${{ parameters.environment }}'
-              environmentServiceNameAzureRM: 'Azure-Service-Connection'
+              environmentServiceNameAzureRM: 'TerraformServiceConnection'
