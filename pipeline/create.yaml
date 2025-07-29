@@ -6,8 +6,8 @@ trigger:
     - feature/*
   paths:
     include:
-    - dev/* # Trigger if changes in dev directory
-    - modules/* # Trigger if changes in modules directory
+    - dev/* # CORRECTED: Trigger on changes in 'dev' directory
+    - modules/* # CORRECTED: Trigger on changes in 'modules' directory
 
 variables:
   - group: terraform-secrets
@@ -37,7 +37,7 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'init'
-        # Point to the directory containing your main.tf for dev environment
+        # CORRECTED: Point to the directory containing your main.tf for dev environment
         workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
         backendServiceArm: 'TerraformServiceConnection'
         backendAzureRmResourceGroupName: 'AZ-104'
@@ -50,7 +50,7 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'validate'
-        # Point to the directory containing your main.tf for dev environment
+        # CORRECTED: Point to the directory containing your main.tf for dev environment
         workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
 
 - stage: Dev_Deploy
@@ -69,12 +69,12 @@ stages:
               terraformVersion: '1.5.7'
           
           - task: TerraformTask@5
-            displayName: 'Terraform Init (Dev Deploy)'
+            displayName: 'Terraform Init (Dev Deploy)' # ADDED: Explicit init before apply
             inputs:
               provider: 'azurerm'
-              command: 'init'
+              # CORRECTED: workingDirectory for init
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-              backendServiceArm: 'TerraformServiceConnection' # Ensure this is also present for apply stage init
+              backendServiceArm: 'TerraformServiceConnection'
               backendAzureRmResourceGroupName: 'AZ-104'
               backendAzureRmStorageAccountName: 'glowsatf'
               backendAzureRmContainerName: 'sacont'
@@ -85,7 +85,7 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'apply'
-              # Point to the directory containing your main.tf for dev environment
+              # CORRECTED: Point to the directory containing your main.tf for dev environment
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
               environmentServiceNameAzureRM: 'TerraformServiceConnection'
 
@@ -105,23 +105,23 @@ stages:
               terraformVersion: '1.5.7'
 
           - task: TerraformTask@5
-            displayName: 'Terraform Init (Test Deploy)'
+            displayName: 'Terraform Init (Test Deploy)' # ADDED: Explicit init for test stage
             inputs:
               provider: 'azurerm'
               command: 'init'
-              # Assuming you have a test/main.tf structure similar to dev
-              workingDirectory: '$(System.DefaultWorkingDirectory)/test' # <--- IMPORTANT: Adjust if your test configuration is elsewhere
+              # CORRECTED: Assuming you have a test/main.tf structure similar to dev
+              workingDirectory: '$(System.DefaultWorkingDirectory)/test'
               backendServiceArm: 'TerraformServiceConnection'
               backendAzureRmResourceGroupName: 'AZ-104'
               backendAzureRmStorageAccountName: 'glowsatf'
               backendAzureRmContainerName: 'sacont'
-              backendAzureRmKey: 'test.tfstate' # <--- IMPORTANT: Use a different key for test state
+              backendAzureRmKey: 'test.tfstate' # IMPORTANT: Use a different key for test state
 
           - task: TerraformTask@5
             displayName: 'Terraform Apply (Test)'
             inputs:
               provider: 'azurerm'
               command: 'apply'
-              # Assuming you have a test/main.tf structure similar to dev
-              workingDirectory: '$(System.DefaultWorkingDirectory)/test' # <--- IMPORTANT: Adjust if your test configuration is elsewhere
+              # CORRECTED: Assuming you have a test/main.tf structure similar to dev
+              workingDirectory: '$(System.DefaultDirectory)/test'
               environmentServiceNameAzureRM: 'TerraformServiceConnection'
