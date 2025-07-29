@@ -20,9 +20,9 @@ stages:
       vmImage: 'ubuntu-latest'
     steps:
     - task: TerraformInstaller@0
-      displayName: 'Install Terraform 1.5.7'
+      displayName: 'Install Terraform 1.12.2'
       inputs:
-        terraformVersion: '1.5.7'
+        terraformVersion: '1.12.2'
 
     - script: |
         which terraform
@@ -61,9 +61,9 @@ stages:
         deploy:
           steps:
           - task: TerraformInstaller@0
-            displayName: 'Install Terraform 1.5.7'
+            displayName: 'Install Terraform 1.12.2'
             inputs:
-              terraformVersion: '1.5.7'
+              terraformVersion: '1.12.2'
 
           - script: |
               which terraform
@@ -92,9 +92,9 @@ stages:
         deploy:
           steps:
           - task: TerraformInstaller@0
-            displayName: 'Install Terraform 1.5.7'
+            displayName: 'Install Terraform 1.12.2'
             inputs:
-              terraformVersion: '1.5.7'
+              terraformVersion: '1.12.2'
 
           - script: |
               which terraform
