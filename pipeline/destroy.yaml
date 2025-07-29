@@ -21,7 +21,7 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-    - task: TerraformInstaller@0
+    - task: TerraformInstaller@1
       inputs:
         terraformVersion: $(TERRAFORM_VERSION)
     
@@ -46,7 +46,7 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: TerraformInstaller@0
+          - task: TerraformInstaller@1
             inputs:
               terraformVersion: $(TERRAFORM_VERSION)
           
