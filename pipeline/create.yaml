@@ -27,8 +27,8 @@ stages:
       inputs:
         script: 'terraform -version'
 
-    - powershell: |
-        Get-ChildItem "C:\hostedtoolcache\windows\terraform\1.12.2\x64"
+    # - powershell: |
+    #     Get-ChildItem "C:\hostedtoolcache\windows\terraform\1.12.2\x64"
 
     - task: TerraformTask@5
       inputs:
