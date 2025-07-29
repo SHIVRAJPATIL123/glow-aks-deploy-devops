@@ -18,10 +18,11 @@ stages:
     pool:
       vmImage: 'windows-latest'
     steps:
-    - task: TerraformInstaller@0
+
+    - task: TerraformInstaller@1
       inputs:
-        terraformVersion: '1.5.7'
-    
+        terraformVersion: 'latest'
+
     - task: CmdLine@2
       inputs:
         script: 'terraform -version'
@@ -30,7 +31,7 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'init'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+        workingDirectory: '$(System.DefaultWorkingDirectory)\terraform\dev'
         backendServiceArm: 'TerraformServiceConnection'
         backendAzureRmResourceGroupName: 'AZ-104'
         backendAzureRmStorageAccountName: 'glowsatf'
