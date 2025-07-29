@@ -20,7 +20,6 @@ stages:
     steps:
     - checkout: self
 
-    # --- REPLACE TerraformInstaller@0 with manual download/install ---
     - bash: |
         TF_VERSION="1.5.7"
         TF_INSTALL_DIR="/usr/local/bin" # A common location for executables on Linux
@@ -35,30 +34,48 @@ stages:
         sudo mv terraform ${TF_INSTALL_DIR}/
         sudo chmod +x ${TF_INSTALL_DIR}/terraform
 
-        echo "Verifying Terraform installation and version:"
-        terraform --version
+        echo "Verifying Terraform installation and version (within manual install script):"
+        terraform --version # This should succeed if the above steps worked
       displayName: 'Manual Install Terraform'
-      # Set continueOnError to true only for debugging. Remove once successful.
-      # continueOnError: true
+      # continueOnError: true # Keep this for now, but aim to remove
 
-    # --- Now use the installed Terraform ---
+    # --- NEW DIAGNOSTIC STEPS AFTER MANUAL INSTALL ---
+
+    - bash: |
+        echo "Post-install verification - Listing /usr/local/bin/terraform:"
+        ls -la /usr/local/bin/terraform
+
+        echo "Post-install verification - Checking environment PATH:"
+        echo $PATH
+
+        echo "Post-install verification - Attempting to execute /usr/local/bin/terraform directly:"
+        /usr/local/bin/terraform --version
+      displayName: 'Verify Terraform Executability After Manual Install'
+      # continueOnError: true # Keep this for now, but aim to remove
+
+    # --- Your original Terraform init task ---
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
         command: 'init'
+        # IMPORTANT: When you manually install to /usr/local/bin/,
+        # TerraformTaskV4@4 should find it in the PATH.
+        # However, if it still fails, you *might* need to explicitly set terraformPath.
+        # For now, let's see if the above diagnostics reveal the issue.
+        # terraformPath: '/usr/local/bin/terraform' # <--- Only add this if other diagnostics fail
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
         backendServiceArm: 'TerraformServiceConnection'
         backendAzureRmResourceGroupName: 'AZ-104'
         backendAzureRmStorageAccountName: 'glowsatf'
         backendAzureRmContainerName: 'sacont'
         backendAzureRmKey: 'dev.terraform.tfstate'
-      displayName: 'Terraform Init (Dev)' # Added display name for clarity
+      displayName: 'Terraform Init (Dev)'
 
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
         command: 'validate'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
-      displayName: 'Terraform Validate (Dev)' # Added display name for clarity
+      displayName: 'Terraform Validate (Dev)'
 
-# ... (Apply similar manual installation to Dev_Deploy and Test_Deploy stages)
+# ... (Apply similar diagnostic steps to Dev_Deploy and Test_Deploy stages as well)
