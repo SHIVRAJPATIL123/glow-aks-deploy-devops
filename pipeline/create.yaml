@@ -30,16 +30,17 @@ stages:
     # - powershell: |
     #     Get-ChildItem "C:\hostedtoolcache\windows\terraform\1.12.2\x64"
 
-    - task: TerraformTask@5
+    - task: CmdLine@2
       inputs:
-        provider: 'azurerm'
-        command: 'init'
+        script: |
+          terraform -version
+          terraform init -backend-config="storage_account_name=glowsatf" `
+                        -backend-config="container_name=sacont" `
+                        -backend-config="key=dev.terraform.tfstate" `
+                        -backend-config="resource_group_name=AZ-104" `
+                        -backend-config="subscription_id=f510d486-a17f-44f2-a1c4-63a7186e923c" `
+                        -backend-config="use_azuread_auth=true"
         workingDirectory: '$(System.DefaultWorkingDirectory)\terraform\dev'
-        backendServiceArm: 'TerraformServiceConnection'
-        backendAzureRmResourceGroupName: 'AZ-104'
-        backendAzureRmStorageAccountName: 'glowsatf'
-        backendAzureRmContainerName: 'sacont'
-        backendAzureRmKey: 'dev.terraform.tfstate'
     
     - task: TerraformTask@5
       inputs:
