@@ -24,6 +24,11 @@ stages:
           inputs:
             terraformVersion: '1.9.0'
 
+        - script: |
+            which terraform
+            terraform version
+          displayName: 'Verify Terraform installation'
+
         - task: TerraformTaskV4@4
           displayName: 'Terraform Init'
           inputs:
@@ -60,6 +65,11 @@ stages:
                 inputs:
                   terraformVersion: '1.9.0'
 
+              - script: |
+                  which terraform
+                  terraform version
+                displayName: 'Verify Terraform installation'
+
               - task: TerraformTaskV4@4
                 displayName: 'Terraform Apply Dev'
                 inputs:
@@ -85,6 +95,11 @@ stages:
                 displayName: 'Install Terraform 1.9.0'
                 inputs:
                   terraformVersion: '1.9.0'
+
+              - script: |
+                  which terraform
+                  terraform version
+                displayName: 'Verify Terraform installation'
 
               - task: TerraformTaskV4@4
                 displayName: 'Terraform Apply Test'
