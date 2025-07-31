@@ -1,58 +1,83 @@
-trigger: none
-
-parameters:
-- name: environment
-  type: string
-  values:
-  - dev
-  - staging
-  - prod
-  default: dev
+trigger:
+  branches:
+    include:
+      - main
+      - feature/*
+  paths:
+    include:
+      - terraform/*
 
 variables:
   - group: terraform-secrets
-  - name: TERRAFORM_VERSION
-    value: '1.5.7'
 
 stages:
-- stage: Plan_Destroy
-  jobs:
-  - job: terraform_plan_destroy
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-    - task: TerraformInstaller@1
-      inputs:
-        terraformVersion: $(TERRAFORM_VERSION)
-    
-    - task: TerraformTaskV4@4
-      inputs:
-        provider: 'azurerm'
-        command: 'plan'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/${{ parameters.environment }}'
-        environmentServiceNameAzureRM: 'TerraformServiceConnection'
-        commandOptions: '-destroy'
-        publishPlanResults: 'tfdestroy'
-
-- stage: Destroy
-  dependsOn: Plan_Destroy
-  condition: succeeded()
-  jobs:
-  - deployment: terraform_destroy
-    environment: ${{ parameters.environment }}
-    pool:
-      vmImage: 'ubuntu-latest'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
+  - stage: validate
+    jobs:
+      - job: tf_validate
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
           - task: TerraformInstaller@1
             inputs:
-              terraformVersion: $(TERRAFORM_VERSION)
-          
-          - task: TerraformTaskV4@4
+              terraformVersion: '1.9.0' # or 'latest'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+              backendServiceArm: 'TerraformServiceConnection'
+              backendAzureRmResourceGroupName: 'AZ-104'
+              backendAzureRmStorageAccountName: 'glowsatf'
+              backendAzureRmContainerName: 'sacont'
+              backendAzureRmKey: 'dev.tfstate'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+              environmentServiceNameAzureRM: 'TerraformServiceConnection'
+
+  - stage: Dev_destroy
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: tf_destroy
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: '1.9.0' # or 'latest'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+              backendServiceArm: 'TerraformServiceConnection'
+              backendAzureRmResourceGroupName: 'AZ-104'
+              backendAzureRmStorageAccountName: 'glowsatf'
+              backendAzureRmContainerName: 'sacont'
+              backendAzureRmKey: 'dev.tfstate'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+              environmentServiceNameAzureRM: 'TerraformServiceConnection'
+
+          - task: TerraformTask@5
             inputs:
               provider: 'azurerm'
               command: 'destroy'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/${{ parameters.environment }}'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+              commandOptions: '--auto-approve'
               environmentServiceNameAzureRM: 'TerraformServiceConnection'
