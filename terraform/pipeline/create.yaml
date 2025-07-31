@@ -1,92 +1,83 @@
-# azure-pipelines.yml
 trigger:
   branches:
     include:
-    - main
-    - feature/*
+      - main
+      - feature/*
   paths:
     include:
-    - terraform/*
+      - terraform/*
 
 variables:
   - group: terraform-secrets
 
 stages:
-- stage: Validate
-  jobs:
-  - job: terraform_validate
-    pool:
-      vmImage: 'windows-latest'
-    steps:
-
-    - task: TerraformInstaller@1
-      inputs:
-        terraformVersion: '1.6.6'
-
-    - task: CmdLine@2
-      inputs:
-        script: 'terraform -version'
-
-    - powershell: |
-        Get-ChildItem "$(System.DefaultWorkingDirectory)\terraform\dev"
-
-    - task: TerraformTask@5
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        workingDirectory: '$(System.DefaultWorkingDirectory)\terraform\dev'
-        backendServiceArm: 'TerraformServiceConnection'
-        backendAzureRmResourceGroupName: 'AZ-104'
-        backendAzureRmStorageAccountName: 'glowsatf'
-        backendAzureRmContainerName: 'sacont'
-        backendAzureRmKey: 'dev.tfstate'
-    
-    - task: TerraformTask@5
-      inputs:
-        provider: 'azurerm'
-        command: 'validate'
-        workingDirectory: '$(System.DefaultWorkingDirectory)\terraform\dev'
-
-- stage: Dev_Deploy
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  jobs:
-  - deployment: terraform_apply_dev
-    environment: dev
-    pool:
-      vmImage: 'windows-latest'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: TerraformInstaller@0
+  - stage: validate
+    jobs:
+      - job: tf_validate
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: TerraformInstaller@1
             inputs:
-              terraformVersion: '1.5.7'
-          
+              terraformVersion: '1.9.0' # or 'latest'
+
           - task: TerraformTask@5
             inputs:
               provider: 'azurerm'
-              command: 'apply'
-              workingDirectory: '$(System.DefaultWorkingDirectory)\terraform\dev'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+              backendServiceArm: 'TerraformServiceConnection'
+              backendAzureRmResourceGroupName: 'AZ-104'
+              backendAzureRmStorageAccountName: 'glowsatf'
+              backendAzureRmContainerName: 'sacont'
+              backendAzureRmKey: 'dev.tfstate'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
               environmentServiceNameAzureRM: 'TerraformServiceConnection'
 
-- stage: staging_Deploy
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  jobs:
-  - deployment: terraform_apply_staging
-    environment: staging
-    pool:
-      vmImage: 'windows-latest'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: TerraformInstaller@0
+  - stage: Dev_Deploy
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: tf_deploy
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: TerraformInstaller@1
             inputs:
-              terraformVersion: '1.5.7'
-          
+              terraformVersion: '1.9.0' # or 'latest'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+              backendServiceArm: 'TerraformServiceConnection'
+              backendAzureRmResourceGroupName: 'AZ-104'
+              backendAzureRmStorageAccountName: 'glowsatf'
+              backendAzureRmContainerName: 'sacont'
+              backendAzureRmKey: 'dev.tfstate'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+              environmentServiceNameAzureRM: 'TerraformServiceConnection'
+
           - task: TerraformTask@5
             inputs:
               provider: 'azurerm'
               command: 'apply'
-              workingDirectory: '$(System.DefaultWorkingDirectory)\terraform/staging'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/dev'
+              commandOptions: '--auto-approve'
               environmentServiceNameAzureRM: 'TerraformServiceConnection'
